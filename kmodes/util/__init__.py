@@ -3,6 +3,7 @@ Generic utilities for clustering
 """
 
 import numpy as np
+import pandas as pd
 
 
 def pandas_to_numpy(x):
@@ -41,7 +42,7 @@ def encode_features(X, enc_map=None):
     Xenc = np.zeros(X.shape, dtype='int32')
     for ii in range(X.shape[1]):
         if fit:
-            col_enc = {val: jj for jj, val in enumerate(np.unique(X[:, ii]))}
+            col_enc = {val: jj for jj, val in enumerate(np.unique(X[~pd.isna(X[:, ii]), ii]))}
             enc_map.append(col_enc)
         # Unknown categories all get a value of -1.
         Xenc[:, ii] = np.array([enc_map[ii].get(x, -1) for x in X[:, ii]])

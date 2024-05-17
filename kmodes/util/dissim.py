@@ -6,7 +6,9 @@ import numpy as np
 
 
 def matching_dissim(a, b, **_):
-    """Simple matching dissimilarity function"""
+    """Simple matching dissimilarity function, notice that if the point
+    used to compare to the centroid is non-existent, -1, it will return
+    no match - centroids must have existing measures"""
     return np.sum(a != b, axis=1)
 
 
@@ -38,9 +40,10 @@ def jaccard_dissim_label(a, b, **__):
 
 
 def euclidean_dissim(a, b, **_):
-    """Euclidean distance dissimilarity function"""
-    if np.isnan(a).any() or np.isnan(b).any():
-        raise ValueError("Missing values detected in numerical columns.")
+    """Euclidean distance dissimilarity function, notice nan values
+    are mapped to zero values when distances are calculated"""
+    a = np.nan_to_num(a)
+    b = np.nan_to_num(b)
     return np.sum((a - b) ** 2, axis=1)
 
 

@@ -104,6 +104,18 @@ Usage
 The examples directory showcases simple use cases of both k-modes
 ('soybean.py') and k-prototypes ('stocks.py').
 
+
+Testing
+-------
+
+testing kprototypes module
+
+.. code:: bash
+	  python -m unittest kmodes.tests.tesk_kprototypes.TestKProtoTypes
+
+.. code:: bash
+	  python -m unittest kmodes.tests.test_kmodes.TestKModes
+	  
 Parallel execution
 ------------------
 

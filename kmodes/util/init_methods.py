@@ -44,9 +44,11 @@ def init_cao(X, n_clusters, dissim):
     for iattr in range(n_attrs):
         freq = defaultdict(int)
         for val in X[:, iattr]:
-            freq[val] += 1
+            if not np.isnan(val) and val != -1:
+                freq[val] += 1
         for ipoint in range(n_points):
-            dens[ipoint] += freq[X[ipoint, iattr]] / float(n_points) / float(n_attrs)
+            if not np.isnan(X[ipoint, iattr]):
+                dens[ipoint] += freq[X[ipoint, iattr]] / float(n_points) / float(n_attrs)
 
     # Choose initial centroids based on distance and density.
     centroids[0] = X[np.argmax(dens)]
