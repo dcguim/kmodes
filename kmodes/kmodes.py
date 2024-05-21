@@ -382,8 +382,11 @@ def _move_point_cat(point, ipoint, to_clust, from_clust, cl_attr_freq,
     """Move point between clusters, categorical attributes."""
     membship[to_clust, ipoint] = 1
     membship[from_clust, ipoint] = 0
+
     # Update frequencies of attributes in cluster.
     for iattr, curattr in enumerate(point):
+        if curattr == -1:
+            continue
         to_attr_counts = cl_attr_freq[to_clust][iattr]
         from_attr_counts = cl_attr_freq[from_clust][iattr]
 

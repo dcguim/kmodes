@@ -126,4 +126,4 @@ class TestKProtoTypesMissing(unittest.TestCase):
             X = read_test_data(p/10)
             categorical = [2, 3]
             kprot_fit = kprot.fit(X, categorical=categorical, missing_obs=True)
-            kprot_fit()
+            kprot_fit.cl

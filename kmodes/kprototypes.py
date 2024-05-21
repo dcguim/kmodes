@@ -239,15 +239,9 @@ def labels_cost(Xnum, Xcat, centroids, num_dissim, cat_dissim, gamma,
         Xnum = check_array(Xnum)
     
     cost = 0.
-    import pdb
+
     labels = np.empty(n_points, dtype=np.uint16)
     for ipoint in range(n_points):
-#        for v in Xnum[ipoint]:
-#            if np.isnan(v):
-#                pdb.set_trace()
-#        for v in Xcat[ipoint]:
-#            if v == -1:
-#                pdb.set_trace()
         # Numerical cost = sum of Euclidean distances
         num_costs = num_dissim(centroids[0], Xnum[ipoint])
         cat_costs = cat_dissim(centroids[1], Xcat[ipoint], X=Xcat, membship=membship)
@@ -354,7 +348,6 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
         init_tries += 1
         print(f'init_tries = {init_tries}')
         import pdb
-#        pdb.set_trace()
         # _____ INIT _____
         if verbose:
             print("Init: initializing centroids")
@@ -362,7 +355,7 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
             centroids = init_huang(Xcat, n_clusters, cat_dissim, random_state)
         elif isinstance(init, str) and init.lower() == 'cao':
             centroids = init_cao(Xcat, n_clusters, cat_dissim)
-#            pdb.set_trace()
+
             print(centroids)
             for x1, x2 in centroids:
                 if x1 == -1 or x2 == -1:
@@ -398,7 +391,7 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
             # categorical following the k-modes methods.
 #            pdb.set_trace()
             meanx = np.nanmean(Xnum, axis=0)
-            stdx = np.nanstd(Xnum, axis=0)           
+            stdx = np.nanstd(Xnum, axis=0)
             centroids = [
                 meanx + random_state.randn(n_clusters, nnumattrs) * stdx,
                 centroids
@@ -411,13 +404,13 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
         # can do k-means on the numerical attributes.
         cl_attr_sum = np.zeros((n_clusters, nnumattrs), dtype=np.float64)
         # Same for the membership sum per cluster
+        # why is this a float64? shouldn't the membership value be int?
         cl_memb_sum = np.zeros(n_clusters, dtype=np.float64)
         # cl_attr_freq is a list of lists with dictionaries that contain
         # the frequencies of values per cluster and attribute.
         cl_attr_freq = [[defaultdict(float) for _ in range(ncatattrs)]
                         for _ in range(n_clusters)]
         for ipoint in range(n_points):
-#            import pdb; pdb.set_trace()
             weight = sample_weight[ipoint] if sample_weight is not None else 1
             # Initial assignment to clusters
             clust = np.argmin(
@@ -427,7 +420,6 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
             membship[clust, ipoint] = 1
             cl_memb_sum[clust] += weight
             # Count attribute values per cluster.
-#            pdb.set_trace()
             for iattr, curattr in enumerate(Xnum[ipoint]):
                 if not np.isnan(curattr):
                     cl_attr_sum[clust, iattr] += curattr * weight
@@ -436,7 +428,6 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
                     cl_attr_freq[clust][iattr][curattr] += weight
 
         # If no empty clusters, then consider initialization finalized.
-#        pdb.set_trace()
         if membship.sum(axis=1).min() > 0:
             break
 
@@ -445,7 +436,6 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
             # initialize instead.
             init = 'random'
         elif init_tries == RAISE_INIT_TRIES:
- #           import pdb; pdb.set_trace()
             raise ValueError(
                 "Clustering algorithm could not initialize. "
                 "Consider assigning the initial clusters manually."
@@ -480,6 +470,7 @@ def _k_prototypes_single(Xnum, Xcat, nnumattrs, ncatattrs, n_clusters, n_points,
                                cl_attr_freq, membship, num_dissim, cat_dissim,
                                gamma, random_state, sample_weight)
         print('enter here2')
+        print(centroids)
         # All points seen in this iteration
         labels, ncost = labels_cost(Xnum, Xcat, centroids,
                                     num_dissim, cat_dissim, gamma, membship,
@@ -500,6 +491,8 @@ def _k_prototypes_iter(Xnum, Xcat, centroids, cl_attr_sum, cl_memb_sum, cl_attr_
     moves = 0
     for ipoint in range(Xnum.shape[0]):
         weight = sample_weight[ipoint] if sample_weight is not None else 1
+        import pdb;
+
         clust = np.argmin(
             num_dissim(centroids[0], Xnum[ipoint]) +
             gamma * cat_dissim(centroids[1], Xcat[ipoint], X=Xcat, membship=membship)
@@ -507,7 +500,7 @@ def _k_prototypes_iter(Xnum, Xcat, centroids, cl_attr_sum, cl_memb_sum, cl_attr_
         if membship[clust, ipoint]:
             # Point is already in its right place.
             continue
-
+        
         # Move point, and update old/new cluster frequencies and centroids.
         moves += 1
         old_clust = np.argwhere(membship[:, ipoint])[0][0]
@@ -522,16 +515,17 @@ def _k_prototypes_iter(Xnum, Xcat, centroids, cl_attr_sum, cl_memb_sum, cl_attr_
             Xcat[ipoint], ipoint, clust, old_clust,
             cl_attr_freq, membship, centroids[1], weight
         )
-
         # Update old and new centroids for numerical attributes using
         # the means and sums of all values
         for iattr in range(len(Xnum[ipoint])):
+            if np.isnan(Xnum[ipoint][iattr]):
+                continue
             for curc in (clust, old_clust):
                 if cl_memb_sum[curc]:
                     centroids[0][curc, iattr] = cl_attr_sum[curc, iattr] / cl_memb_sum[curc]
                 else:
                     centroids[0][curc, iattr] = 0.
-
+                    
         # In case of an empty cluster, reinitialize with a random point
         # from largest cluster.
         if not cl_memb_sum[old_clust]:
@@ -555,6 +549,8 @@ def _move_point_num(point, to_clust, from_clust, cl_attr_sum, cl_memb_sum, sampl
     """Move point between clusters, numerical attributes."""
     # Update sum of attributes in cluster.
     for iattr, curattr in enumerate(point):
+        if np.isnan(curattr):
+            continue
         cl_attr_sum[to_clust][iattr] += curattr * sample_weight
         cl_attr_sum[from_clust][iattr] -= curattr * sample_weight
     # Update sums of memberships in cluster
@@ -565,7 +561,8 @@ def _move_point_num(point, to_clust, from_clust, cl_attr_sum, cl_memb_sum, sampl
 
 def _split_num_cat(X, categorical):
     """Extract numerical and categorical columns.
-    Convert to numpy arrays, if needed.
+    Convert to numpy arrays, if
+    needed.
 
     :param X: Feature matrix
     :param categorical: Indices of categorical columns
