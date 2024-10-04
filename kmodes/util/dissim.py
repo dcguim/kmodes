@@ -7,7 +7,7 @@ import numpy as np
 
 def matching_dissim(a, b, **_):
     """Simple matching dissimilarity function, notice that if the point
-    used to compare to the centroid is non-existent, -1, it will return
+    used to compare to the centroid is non-existent or -1, it will return
     no match - centroids must have existing measures"""
     return np.sum(a != b, axis=1)
 

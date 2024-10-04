@@ -19,11 +19,9 @@ def generate_test_data():
     missing. This function is for documentation-only purposes on how the data
     was generated - the data found in the 2num2cat_missing.csv file should be
     used as is within test methods repeatability of results"""
-
     seed = 123
     for p in range(5, 11):
         generate_test_dataset(p/10, seed)
-
 
 def generate_test_dataset(p, seed=None):
     # generate numerical data
@@ -126,4 +124,5 @@ class TestKProtoTypesMissing(unittest.TestCase):
             X = read_test_data(p/10)
             categorical = [2, 3]
             kprot_fit = kprot.fit(X, categorical=categorical, missing_obs=True)
-            kprot_fit.cl
+            ## kprot_fit.cluster_centroids_
+
