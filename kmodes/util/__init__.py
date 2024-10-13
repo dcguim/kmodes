@@ -3,8 +3,7 @@ Generic utilities for clustering
 """
 
 import numpy as np
-
-
+import pdb
 def pandas_to_numpy(x):
     return x.values if 'pandas' in str(x.__class__) else x
 
@@ -41,7 +40,8 @@ def encode_features(X, enc_map=None):
     Xenc = np.zeros(X.shape, dtype='int32')
     for ii in range(X.shape[1]):
         if fit:
-            col_enc = {val: jj for jj, val in enumerate(np.unique(X[:, ii]))}
+            col_enc = {val: jj for jj, val in
+                       enumerate(np.unique(X[~np.isnan(X[:, ii])]))}
             enc_map.append(col_enc)
         # Unknown categories all get a value of -1.
         Xenc[:, ii] = np.array([enc_map[ii].get(x, -1) for x in X[:, ii]])
@@ -62,5 +62,5 @@ def decode_centroids(encoded, mapping):
 
 
 def get_unique_rows(a):
-    """Gets the unique rows in a numpy array."""
-    return np.vstack(list({tuple(row) for row in a}))
+    """Gets the unique complete, no missing (-1s) values rows in a numpy array."""
+    return np.vstack(list({tuple(row) for row in a if -1 not in row}))

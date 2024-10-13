@@ -1,10 +1,13 @@
 from collections import defaultdict
 
 import numpy as np
+from kmodes.util import get_unique_rows
+import pdb
 
 
-def init_huang(X, n_clusters, dissim, random_state):
+def init_huang(X, n_clusters, dissim, random_state, missing_obs):
     """Initialize centroids according to method by Huang [1997]."""
+    print('enter huang init')
     n_attrs = X.shape[1]
     centroids = np.empty((n_clusters, n_attrs), dtype='object')
     # determine frequencies of attributes
@@ -15,19 +18,20 @@ def init_huang(X, n_clusters, dissim, random_state):
         # Note: sampling using population in static list with as many choices
         # as frequency counts. Since the counts are small integers,
         # memory consumption is low.
-        choices = X[:, iattr]
+        choices = X[X[:, iattr] != -1, iattr] if missing_obs else X[:, iattr]
         # So that we are consistent between Python versions,
         # each with different dict ordering.
         choices = sorted(choices)
         centroids[:, iattr] = random_state.choice(choices, n_clusters)
     # The previously chosen centroids could result in empty clusters,
-    # so set centroid to closest point in X.
+    # so set centroid to closest complete point in X.
+    complX = get_unique_rows(X) if missing_obs else X
     for ik in range(n_clusters):
-        ndx = np.argsort(dissim(X, centroids[ik]))
+        ndx = np.argsort(dissim(complX, centroids[ik]))
         # We want the centroid to be unique, if possible.
-        while np.all(X[ndx[0]] == centroids, axis=1).any() and ndx.shape[0] > 1:
+        while np.all(complX[ndx[0]] == centroids, axis=1).any() and ndx.shape[0] > 1:
             ndx = np.delete(ndx, 0)
-        centroids[ik] = X[ndx[0]]
+        centroids[ik] = complX[ndx[0]]
 
     return centroids
 

@@ -18,6 +18,7 @@ from .util import get_max_value_key, encode_features, get_unique_rows, \
 from .util.dissim import matching_dissim, ng_dissim
 from .util.init_methods import init_cao, init_huang
 
+import pdb
 
 class KModes(BaseEstimator, ClusterMixin):
 
@@ -114,7 +115,7 @@ class KModes(BaseEstimator, ClusterMixin):
                         "Setting n_init to 1.")
                 self.n_init = 1
 
-    def fit(self, X, y=None, sample_weight=None, **kwargs):
+    def fit(self, X, y=None, sample_weight=None, missing_obs = False,  **kwargs):
         """Compute k-modes clustering.
 
         Parameters
@@ -142,7 +143,8 @@ class KModes(BaseEstimator, ClusterMixin):
             self.verbose,
             random_state,
             self.n_jobs,
-            sample_weight
+            sample_weight,
+            missing_obs
         )
         return self
 
@@ -209,13 +211,16 @@ def labels_cost(X, centroids, dissim, membship=None, sample_weight=None):
 
 
 def k_modes(X, n_clusters, max_iter, dissim, init, n_init, verbose, random_state, n_jobs,
-            sample_weight=None):
+            sample_weight=None, missing_obs=False):
     """k-modes algorithm"""
     random_state = check_random_state(random_state)
     if sparse.issparse(X):
         raise TypeError("k-modes does not support sparse data.")
 
-    X = check_array(X, dtype=None)
+    if missing_obs:
+        X = check_array(X, dtype=None, force_all_finite='allow-nan')
+    else:
+        X = check_array(X, dtype=None)
 
     # Convert the categorical values in X to integers for speed.
     # Based on the unique values in X, we can make a mapping to achieve this.
@@ -228,20 +233,24 @@ def k_modes(X, n_clusters, max_iter, dissim, init, n_init, verbose, random_state
     # Are there more n_clusters than unique rows? Then set the unique
     # rows as initial values and skip iteration.
     unique = get_unique_rows(X)
+    print(init)
+    print(unique)
+    print(n_clusters)
     n_unique = unique.shape[0]
     if n_unique <= n_clusters:
         max_iter = 0
         n_init = 1
         n_clusters = n_unique
         init = unique
-
+    print('new init')
+    print(init)
     results = []
     seeds = random_state.randint(np.iinfo(np.int32).max, size=n_init)
     if n_jobs == 1:
         for init_no in range(n_init):
             results.append(_k_modes_single(
                 X, n_clusters, n_points, n_attrs, max_iter, dissim, init, init_no,
-                verbose, seeds[init_no], sample_weight
+                verbose, seeds[init_no], sample_weight, missing_obs
             ))
     else:
         results = Parallel(n_jobs=n_jobs, verbose=0)(
@@ -259,13 +268,13 @@ def k_modes(X, n_clusters, max_iter, dissim, init, n_init, verbose, random_state
 
 
 def _k_modes_single(X, n_clusters, n_points, n_attrs, max_iter, dissim, init, init_no,
-                    verbose, random_state, sample_weight=None):
+                    verbose, random_state, sample_weight=None, missing_obs=False):
     random_state = check_random_state(random_state)
     # _____ INIT _____
     if verbose:
         print("Init: initializing centroids")
     if isinstance(init, str) and init.lower() == 'huang':
-        centroids = init_huang(X, n_clusters, dissim, random_state)
+        centroids = init_huang(X, n_clusters, dissim, random_state, missing_obs)
     elif isinstance(init, str) and init.lower() == 'cao':
         centroids = init_cao(X, n_clusters, dissim)
     elif isinstance(init, str) and init.lower() == 'random':
@@ -284,7 +293,7 @@ def _k_modes_single(X, n_clusters, n_points, n_attrs, max_iter, dissim, init, in
         centroids = np.asarray(init, dtype=np.uint16)
     else:
         raise NotImplementedError
-
+    pdb.set_trace()
     if verbose:
         print("Init: initializing clusters")
     membship = np.zeros((n_clusters, n_points), dtype=np.bool_)
